@@ -166,14 +166,23 @@ class LoginWindow(ctk.CTkFrame):
         self.configure(fg_color="#f0f0f0")
         
         # Try to load background image
+        self.bg_image = None  # Initialize as None
         try:
-            if os.path.exists("images/login_bg.png"):
-                background_image = Image.open("images/login_bg.png").resize((900, 600))
+            bg_image_path = "images/login_bg.png"
+            if os.path.exists(bg_image_path):
+                background_image = Image.open(bg_image_path).resize((900, 600))
                 self.bg_image = ImageTk.PhotoImage(background_image)
                 self.bg_label = ctk.CTkLabel(self, image=self.bg_image, text="")
                 self.bg_label.place(relwidth=1, relheight=1)
+            else:
+                # Create a background color if image is not available
+                self.bg_frame = ctk.CTkFrame(self, fg_color="#f0f0f0")
+                self.bg_frame.place(relwidth=1, relheight=1)
         except Exception as e:
             print(f"Error loading background image: {e}")
+            # Create a background color
+            self.bg_frame = ctk.CTkFrame(self, fg_color="#f0f0f0")
+            self.bg_frame.place(relwidth=1, relheight=1)
         
         # Form frame
         self.form_frame = ctk.CTkFrame(self, fg_color="white", corner_radius=15, width=400, height=500)
@@ -712,84 +721,130 @@ class LoginWindow(ctk.CTkFrame):
     def navigate_to_dashboard(self, role, user_id):
         """Navigate to the appropriate dashboard based on user role."""
         try:
+            # Clean up any image references first to prevent pyimage errors
+            self.bg_image = None
+            
             # Remember the current master window to close it later
             current_master = self.master
             
             # Try to load the correct dashboard
             if role == "admin":
-                # Add directory paths to help with imports
-                sys.path.append(str(current_dir))
-                sys.path.append(str(parent_dir))
+                # Create a separate process for the admin dashboard
+                import importlib
                 
+                # Try direct import first
                 try:
-                    # Try direct import first
-                    from admin.admin_dashboard import AdminDashboard
+                    # Import the module the first time
+                    if 'admin.admin_dashboard' not in sys.modules:
+                        from admin.admin_dashboard import AdminDashboard
+                    else:
+                        # If already imported, reload it
+                        admin_dashboard_module = importlib.import_module('admin.admin_dashboard')
+                        importlib.reload(admin_dashboard_module)
+                        from admin.admin_dashboard import AdminDashboard
+                    
+                    # Close the login window before creating new window to prevent resource conflicts
+                    current_master.withdraw()
+                    
+                    # Create a new independent window for the dashboard
                     dashboard = AdminDashboard(user_id=user_id)
-                except ImportError:
-                    # Try importing with adjusted path
-                    admin_path = current_dir / "admin"
-                    sys.path.append(str(admin_path))
                     
-                    # Try with explicit file path imports
-                    import importlib.util
-                    admin_file = current_dir / "admin" / "admin_dashboard.py"
+                    # Only destroy login window after dashboard is created successfully
+                    current_master.destroy()
                     
-                    if admin_file.exists():
-                        spec = importlib.util.spec_from_file_location("admin_dashboard", admin_file)
-                        admin_module = importlib.util.module_from_spec(spec)
-                        spec.loader.exec_module(admin_module)
-                        dashboard = admin_module.AdminDashboard(user_id=user_id)
-                    else:
-                        raise ImportError("Could not find admin_dashboard.py")
+                    dashboard.mainloop()
+                    return
                 
+                except ImportError:
+                    # Try alternative import paths
+                    print("Trying alternative admin dashboard import paths...")
+                    try:
+                        # Add current directory to path
+                        current_dir = os.path.dirname(os.path.abspath(__file__))
+                        admin_path = os.path.join(current_dir, "admin")
+                        if os.path.exists(admin_path):
+                            sys.path.insert(0, admin_path)
+                            
+                        # Try direct import again after path adjustment
+                        from admin.admin_dashboard import AdminDashboard
+                        
+                        # Close the login window before creating new window to prevent resource conflicts
+                        current_master.withdraw()
+                        
+                        # Create a new independent window for the dashboard
+                        dashboard = AdminDashboard(user_id=user_id)
+                        
+                        # Only destroy login window after dashboard is created successfully
+                        current_master.destroy()
+                        
+                        dashboard.mainloop()
+                        return
+                    except ImportError as e:
+                        print(f"Second import attempt failed: {e}")
+                        raise
+            
             else:  # Customer dashboard
-                sys.path.append(str(current_dir))
-                sys.path.append(str(parent_dir))
+                import importlib
                 
+                # Try direct import first
                 try:
-                    # Try direct import first
-                    from customer.customer_dashboard import CustomerDashboard
-                    dashboard = CustomerDashboard(user_id=user_id)
-                except ImportError:
-                    # Try importing with adjusted path
-                    customer_path = current_dir / "customer"
-                    sys.path.append(str(customer_path))
-                    
-                    # Try with explicit file path imports
-                    import importlib.util
-                    customer_file = current_dir / "customer" / "customer_dashboard.py"
-                    
-                    if customer_file.exists():
-                        spec = importlib.util.spec_from_file_location("customer_dashboard", customer_file)
-                        customer_module = importlib.util.module_from_spec(spec)
-                        spec.loader.exec_module(customer_module)
-                        dashboard = customer_module.CustomerDashboard(user_id=user_id)
+                    # Import the module the first time
+                    if 'customer.customer_dashboard' not in sys.modules:
+                        from customer.customer_dashboard import CustomerDashboard
                     else:
-                        raise ImportError("Could not find customer_dashboard.py")
-            
-            # Close the login window
-            current_master.destroy()
-            
-            # Start the dashboard main loop
-            dashboard.mainloop()
+                        # If already imported, reload it
+                        customer_dashboard_module = importlib.import_module('customer.customer_dashboard')
+                        importlib.reload(customer_dashboard_module)
+                        from customer.customer_dashboard import CustomerDashboard
+                    
+                    # Close the login window before creating new window to prevent resource conflicts
+                    current_master.withdraw()
+                    
+                    # Create a new independent window for the dashboard
+                    dashboard = CustomerDashboard(user_id=user_id)
+                    
+                    # Only destroy login window after dashboard is created successfully
+                    current_master.destroy()
+                    
+                    dashboard.mainloop()
+                    return
+                    
+                except ImportError:
+                    # Try alternative import paths
+                    print("Trying alternative customer dashboard import paths...")
+                    try:
+                        # Add current directory to path
+                        current_dir = os.path.dirname(os.path.abspath(__file__))
+                        customer_path = os.path.join(current_dir, "customer")
+                        if os.path.exists(customer_path):
+                            sys.path.insert(0, customer_path)
+                            
+                        # Try direct import again after path adjustment
+                        from customer.customer_dashboard import CustomerDashboard
+                        
+                        # Close the login window before creating new window to prevent resource conflicts
+                        current_master.withdraw()
+                        
+                        # Create a new independent window for the dashboard
+                        dashboard = CustomerDashboard(user_id=user_id)
+                        
+                        # Only destroy login window after dashboard is created successfully
+                        current_master.destroy()
+                        
+                        dashboard.mainloop()
+                        return
+                    except ImportError as e:
+                        print(f"Second import attempt failed: {e}")
+                        raise
             
         except Exception as e:
             print(f"Error navigating to dashboard: {e}")
             messagebox.showerror("Error", f"Could not load dashboard: {e}")
             
-            # Create a new login window as fallback
-            try:
-                new_root = ctk.CTk()
-                new_root.title("SuperMarket - Login")
-                new_root.geometry("900x600")
-                center_window(new_root)
-                new_login = LoginWindow(new_root)
-                new_login.pack(expand=True, fill="both")
-                new_root.mainloop()
-            except Exception as e2:
-                print(f"Error recreating login window: {e2}")
-                # Last resort - just quit
-                sys.exit(1)
+            # If we get here, we couldn't load the dashboard - don't destroy the login window
+            # Just reset the error message
+            self.error_label.configure(text=f"Error loading dashboard: {e}")
+            return False
 
 
 # For testing purposes

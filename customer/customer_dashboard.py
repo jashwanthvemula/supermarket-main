@@ -158,6 +158,7 @@ class HomeFrame(ctk.CTkFrame):
         self.welcome_label.pack(pady=(30, 20))
         
         # Banner image
+        self.banner_photo = None  # Initialize as None to maintain reference
         try:
             banner_path = os.path.join("images", "banner.png")
             if os.path.exists(banner_path):
@@ -179,6 +180,16 @@ class HomeFrame(ctk.CTkFrame):
                 self.banner_text.place(relx=0.5, rely=0.5, anchor="center")
         except Exception as e:
             print(f"Error loading banner image: {e}")
+            # Create a fallback banner if image fails
+            self.banner_frame = ctk.CTkFrame(self.inner_frame, fg_color="#e8f0fe", width=600, height=200)
+            self.banner_frame.pack(pady=(10, 20))
+            self.banner_text = ctk.CTkLabel(
+                self.banner_frame,
+                text="Welcome to SuperMarket!\nExplore our products",
+                font=("Arial", 18, "bold"),
+                text_color="#1a73e8"
+            )
+            self.banner_text.place(relx=0.5, rely=0.5, anchor="center")
         
         # Quick Actions Frame
         self.actions_frame = ctk.CTkFrame(self.inner_frame, fg_color="transparent")

@@ -766,7 +766,7 @@ class LoginWindow(ctk.CTkFrame):
                             sys.path.insert(0, admin_path)
                             
                         # Try direct import again after path adjustment
-                        from admin.admin_dashboard import AdminDashboard
+                        from admin_dashboard import AdminDashboard
                         
                         # Close the login window before creating new window to prevent resource conflicts
                         current_master.withdraw()
@@ -820,7 +820,7 @@ class LoginWindow(ctk.CTkFrame):
                             sys.path.insert(0, customer_path)
                             
                         # Try direct import again after path adjustment
-                        from customer.customer_dashboard import CustomerDashboard
+                        from customer_dashboard import CustomerDashboard
                         
                         # Close the login window before creating new window to prevent resource conflicts
                         current_master.withdraw()

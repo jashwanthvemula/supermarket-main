@@ -658,33 +658,63 @@ class LoginWindow(ctk.CTkFrame):
                 try:
                     from admin.admin_dashboard import AdminDashboard
                 except ImportError:
-                    current_dir = os.path.dirname(os.path.abspath(__file__))
-                    admin_path = os.path.join(current_dir, "admin")
-                    if os.path.exists(admin_path):
-                        sys.path.insert(0, admin_path)
-                    from admin.admin_dashboard import AdminDashboard
-                
-                current_master.withdraw()
-                dashboard = AdminDashboard(user_id=user_id)
-                current_master.destroy()
-                dashboard.mainloop()
-                return
+                    # Try alternative import paths
+                    print("Trying alternative admin dashboard import paths...")
+                    try:
+                        # Add current directory to path
+                        current_dir = os.path.dirname(os.path.abspath(__file__))
+                        admin_path = os.path.join(current_dir, "admin")
+                        if os.path.exists(admin_path):
+                            sys.path.insert(0, admin_path)
+                            
+                        # Try direct import again after path adjustment
+                        from admin.admin_dashboard import AdminDashboard
+                        
+                        # Close the login window before creating new window to prevent resource conflicts
+                        current_master.withdraw()
+                        
+                        # Create a new independent window for the dashboard
+                        dashboard = AdminDashboard(user_id=user_id)
+                        
+                        # Only destroy login window after dashboard is created successfully
+                        current_master.destroy()
+                        
+                        dashboard.mainloop()
+                        return
+                    except ImportError as e:
+                        print(f"Second import attempt failed: {e}")
+                        raise
             
             else:  # Customer dashboard
                 try:
                     from customer.customer_dashboard import CustomerDashboard
                 except ImportError:
-                    current_dir = os.path.dirname(os.path.abspath(__file__))
-                    customer_path = os.path.join(current_dir, "customer")
-                    if os.path.exists(customer_path):
-                        sys.path.insert(0, customer_path)
-                    from customer.customer_dashboard import CustomerDashboard
-                
-                current_master.withdraw()
-                dashboard = CustomerDashboard(user_id=user_id)
-                current_master.destroy()
-                dashboard.mainloop()
-                return
+                    # Try alternative import paths
+                    print("Trying alternative customer dashboard import paths...")
+                    try:
+                        # Add current directory to path
+                        current_dir = os.path.dirname(os.path.abspath(__file__))
+                        customer_path = os.path.join(current_dir, "customer")
+                        if os.path.exists(customer_path):
+                            sys.path.insert(0, customer_path)
+                            
+                        # Try direct import again after path adjustment
+                        from customer.customer_dashboard import CustomerDashboard
+                        
+                        # Close the login window before creating new window to prevent resource conflicts
+                        current_master.withdraw()
+                        
+                        # Create a new independent window for the dashboard
+                        dashboard = CustomerDashboard(user_id=user_id)
+                        
+                        # Only destroy login window after dashboard is created successfully
+                        current_master.destroy()
+                        
+                        dashboard.mainloop()
+                        return
+                    except ImportError as e:
+                        print(f"Second import attempt failed: {e}")
+                        raise
             
         except Exception as e:
             print(f"Error navigating to dashboard: {e}")
